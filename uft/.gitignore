@@ -1,0 +1,6 @@
+*.o
+aaa.tmp*
+*.d
+*.out
+tmp.*
+
