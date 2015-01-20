@@ -12,7 +12,12 @@
 class UfServerNode : public tools::ReliableUdpSocket::ServerSocket // tools::Timeout
 {
 public:
-    UfServerNode();
+    class Delegate {
+    public:
+        virtual void onPercent(std::string filename, __int64 downloaded, __int64 total) = 0;
+    };
+
+    UfServerNode(Delegate& d);
 
     virtual void onDataReceived(const char * buffer, int len);
     virtual void onClose();
@@ -32,6 +37,7 @@ private:
     int     remotePort;
     bool    mValid;
     UfFile  mFile;
+    Delegate&   mDelegate;
 
     class FilePart {
     public:

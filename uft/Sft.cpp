@@ -110,6 +110,9 @@ void Sft::onRequestInfo(const char* buffer, int len)
     sip.md5      = mSendFile->md5();
     send(sip);
 
+    mTotalBytes = mSendFile->getSize();
+    mDownloadedBytes = 0;
+
     ILOG();
 }
 
@@ -197,6 +200,11 @@ void Sft::onRequestFile(const char* buffer, int len)
 
         // ILOG() << "send " << ret << " bytes.";
 
+        mDownloadedBytes += ret;
+        float percent = mDownloadedBytes * 100.0 / mTotalBytes;
+        RUN_HERE() << "percent = " << percent;
+        mDelegate.onPercent(percent);
+
         offset += ret;
     }
     mSendFile->close();
@@ -228,7 +236,16 @@ void Sft::onEndSession(const char* buffer, int len)
     SfEndSessionPacket  sep;
     sep.fromBuffer(buffer, len);
     mDelegate.onResult(sep.result);
-    ILOG() << "received endSession: result = " << sep.result;
+
+    const char* _table[] = {
+        "Success.",
+        "Create File Failed.",
+        "Read File Failed.",
+        "Open File Failed.",
+        "Invalid State.",
+        "No Such File."
+    };
+    ILOG() << "received endSession: result = " << sep.result << ": " << _table[sep.result];
 }
 
 void Sft::onSendOver()
@@ -255,6 +272,15 @@ void Sft::endSession(int result)
     sep.result = result;
     send(sep);
 
+    const char* _table[] = {
+        "Success.",
+        "Create File Failed.",
+        "Read File Failed.",
+        "Open File Failed.",
+        "Invalid State.",
+        "No Such File."
+    };
+    ILOG() << "endSession: reason = " << result << ": " << _table[result];
     mDelegate.onResult(result);
 }
 

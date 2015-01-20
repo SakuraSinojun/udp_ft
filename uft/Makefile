@@ -9,13 +9,13 @@ INCLUDES = -I../ -I../tools/serialize -I../../ministun
 TARGET	= libUft.a
 UNITEST = a.out
 SFTTEST = s.out
-# LIBSTUN = ../../ministun/libministun.a
+LIBSTUN = ../../ministun/libministun.a
 
 LINKS	= -L.
-LIBS	= -lpthread
+LIBS	= -lpthread $(LIBSTUN)
 
 # SOURCES := main.cpp
-# SOURCES += Uft.cpp
+SOURCES += Uft.cpp
 SOURCES += UftClient.cpp
 SOURCES += UftServer.cpp
 SOURCES += UfServerNode.cpp
@@ -47,7 +47,7 @@ SOURCES += ../tools/reliable_udp_socket.cpp
 OBJS := $(SOURCES:.cpp=.o)
 DEPS := $(SOURCES:.cpp=.d)
 
-all: prebuild $(TARGET) $(UNITEST) $(SFTTEST)
+all: prebuild $(LIBSTUN) $(TARGET) $(UNITEST) $(SFTTEST)
 
 $(TARGET): $(OBJS) $(DEPS)
 	@echo Linking $@ ...
@@ -56,15 +56,21 @@ $(TARGET): $(OBJS) $(DEPS)
 	@echo -------------------------------------------
 	@echo done.
 
-$(UNITEST): main.o $(TARGET)
+$(UNITEST): main.o $(TARGET) $(LIBSTUN)
 	@echo Linking $@ ...
 	$(LD) main.o $(TARGET) $(LINKS) $(LIBS) -o$@
 	@echo -------------------------------------------
 	@echo done.
 
-$(SFTTEST): main_sft.o $(TARGET)
+$(SFTTEST): main_sft.o $(TARGET) $(LIBSTUN)
 	@echo Linking $@ ...
 	$(LD) main_sft.o $(TARGET) $(LINKS) $(LIBS) -o$@
+	@echo -------------------------------------------
+	@echo done.
+
+$(LIBSTUN):
+	@echo make ministun...
+	make -C ../../ministun
 	@echo -------------------------------------------
 	@echo done.
 

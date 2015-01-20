@@ -78,6 +78,7 @@ private:
     void createPartitions(__int64 size, std::string md5);
     // void startWorkThreads();
 
+    void sendPercent(std::string filename, __int64 down, __int64 total);
 };
 
 

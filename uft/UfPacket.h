@@ -20,6 +20,7 @@
 #define UF_FILECONTENT  0x9
 #define UF_SENDOVER     0xA
 #define UF_PIECEBUFFER  0xB
+#define UF_PERCENT      0xC
 
 class UfPacket : public Serialization {
 public:
@@ -166,6 +167,22 @@ public:
     virtual void Deserialize(Archive& ar) {
         UfPacket::Deserialize(ar);
         ar >> reason;
+    }
+};
+
+class PercentPacket : public UfPacket {
+public:
+    PercentPacket(int sid = -1) : UfPacket(UF_PERCENT, sid) {}
+    std::string filename;
+    __int64     downloaded;
+    __int64     total;
+    virtual void Serialize(Archive& ar) {
+        UfPacket::Serialize(ar);
+        ar << filename << downloaded << total;
+    }
+    virtual void Deserialize(Archive& ar) {
+        UfPacket::Deserialize(ar);
+        ar >> filename >> downloaded >> total;
     }
 };
 

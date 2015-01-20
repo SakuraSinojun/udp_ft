@@ -64,7 +64,15 @@ int UftClient::requestFile(const char * ip, int port, const char * filename, con
 
     RunOnce(NULL);
 
-    RUN_HERE() << "Closing state: " << mRunning;
+    const char * _table[] = {
+        "Running", 
+        "No responose",
+        "Success",
+        "Truncate File Failed",
+        "Failed",
+        "Unknown",
+    };
+    RUN_HERE() << "Closing state: " << mRunning << ": " << _table[mRunning];
 
     if (mRunning == R_SUCCESS) {
         return UFS_SUCCESS;
@@ -287,8 +295,18 @@ void UftClient::onTimeoutWriteFile(void* arg)
         if (mGraphicsListener != NULL) {
             mGraphicsListener->onGraphic(mLocalFile, mPartitions.dumpGraphic());
         }
+        sendPercent(mLocalFile.filename(), mPartitions.downloadedSize(), (__int64)mPartitions.size());
     }
     setTimeout(UFP_WRITEINTERVAL, timeout_selector(UftClient::onTimeoutWriteFile));
+}
+
+void UftClient::sendPercent(std::string filename, __int64 down, __int64 total)
+{
+    PercentPacket   pp;
+    pp.filename = filename;
+    pp.downloaded = down;
+    pp.total = total;
+    Send(pp);
 }
 
 void UftClient::onTimeoutSendOver(void* arg)

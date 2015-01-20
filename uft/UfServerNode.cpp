@@ -40,8 +40,9 @@ private:
 
 
 
-UfServerNode::UfServerNode()
+UfServerNode::UfServerNode(UfServerNode::Delegate& d)
     : mValid(true)
+    , mDelegate(d)
     , mClientPieceBuffer(-1)
 {
     // strcpy(remoteIp, sock.GetRemoteIP());
@@ -142,7 +143,13 @@ void UfServerNode::onDataReceived(const char * buffer, int len)
 
         mSendList.push_back(fp);
         setTimeout(SENDFILE_INTERVAL, timeout_selector(UfServerNode::toSendFile));
-    } 
+    }  else if (packet.action == UF_PERCENT) {
+        PercentPacket   pp(sid());
+        pp.fromBuffer(buffer, len);
+
+        // RUN_HERE() << "percent: " << pp.downloaded * 100.0 / pp.total;
+        mDelegate.onPercent(pp.filename, pp.downloaded, pp.total);
+    }
     /*
     else if (packet.action == UF_SENDOVER) {
         SendOverPacket  sop;

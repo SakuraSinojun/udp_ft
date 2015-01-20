@@ -105,6 +105,7 @@ int Uft::bindServer()
         return -1;
     }
     s = new UftServer();
+    s->setListener(mPercentListener);
     return s->bind();
 }
 
@@ -112,6 +113,7 @@ int Uft::startServer()
 {
     if (s == NULL) {
         s = new UftServer();
+        s->setListener(mPercentListener);
         s->bind();
     }
     return s->start();

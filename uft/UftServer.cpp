@@ -9,28 +9,40 @@
 #include "tools/dump.h"
 #include <sys/time.h>
 
-class ServerNodeCreator : public tools::ReliableUdpSocket::ServerSocketCreator {
-public:
-    virtual tools::ReliableUdpSocket::ServerSocket* create() {
-        UfServerNode* s = new UfServerNode();
-        // RUN_HERE() << "create ServerNode: " << s;
-        return s;
-    }
-    virtual void remove(tools::ReliableUdpSocket::ServerSocket* s) {
-        // RUN_HERE() << "delete ServerNode: " << s;
-        delete s;
-    }
-};
 
-static ServerNodeCreator gServerNodeCreator;
+UftServer::ServerNodeCreator::ServerNodeCreator(UftServer* s)
+    : mUftServer(s)
+{
+}
+
+UftServer::ServerNodeCreator::ServerNodeCreator()
+    : mUftServer(NULL)
+{
+}
+
+tools::ReliableUdpSocket::ServerSocket* UftServer::ServerNodeCreator::create()
+{
+    UfServerNode* s = new UfServerNode(*mUftServer);
+    return s;
+}
+void UftServer::ServerNodeCreator::remove(tools::ReliableUdpSocket::ServerSocket* s)
+{
+    delete s;
+}
+
+// static ServerNodeCreator gServerNodeCreator;
 
 UftServer::UftServer()
+    : mPercentListener(NULL)
+    , mCreator(this)
     // : mState(UfS_SUCCESS)
 {
 }
 
 UftServer::~UftServer()
 {
+    mSock.registerCreator(NULL);
+    mSock.close();
 }
 
 #if 0
@@ -42,9 +54,22 @@ int UftServer::stop(int state)
 }
 #endif
 
+void UftServer::setListener(UfPercentListener* listener)
+{
+    mPercentListener = listener;
+}
+
+void UftServer::onPercent(std::string filename, __int64 downloaded, __int64 total)
+{
+    if (mPercentListener != NULL) {
+        mPercentListener->onPercent(filename.c_str(), downloaded, total);
+    }
+    RUN_HERE() << "percent: " << filename << ": " << downloaded * 100.0 / total;
+}
+
 int UftServer::bind()
 {
-    mSock.registerCreator(&gServerNodeCreator);
+    mSock.registerCreator(&mCreator);
     mSock.create();
 
     int port = 10234;
@@ -81,7 +106,19 @@ int UftServer::start(int timeout_ms)
             break;
         }
     }
-    ILOG() << "server stop at: " << ret;
+    const char* _table[] = {
+        "Success.",
+        "Check Errno.",
+        "Illegal State.",
+        "Timeout.",
+        "Bogus Packet.",
+        "Invalid Packet.",
+        "Accepted.",
+        "No Buffer.",
+        "Closed.",
+        "Max Retry.",
+    };
+    ILOG() << "server stop at: " << ret << ": " << _table[-ret];
     mSock.close();
     if (ret == tools::ReliableUdpSocket::R_TIMEOUT) {
         return UFS_TIMEOUT;
